@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WA Gateway Send Msg</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--card:#1e293b;--card-alt:#334155;
+  --text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;
+  --green:#22c55e;--red:#ef4444;--yellow:#eab308;
+  --radius:10px;--shadow:0 2px 8px rgba(0,0,0,.3);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+html{font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+/* === LOGIN PAGE === */
+#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;padding:1rem}
+.login-card{background:var(--card);border-radius:var(--radius);padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:var(--shadow)}
+.login-card h1{font-size:1.5rem;text-align:center;margin-bottom:.3rem}
+.login-card p{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:1.8rem}
+.login-card input{width:100%;padding:.75rem 1rem;background:var(--card-alt);border:1px solid transparent;border-radius:var(--radius);color:var(--text);font-size:.95rem;margin-bottom:.8rem;outline:none;transition:border .2s}
+.login-card input:focus{border-color:var(--accent)}
+.login-card button{width:100%;padding:.75rem;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .2s}
+.login-card button:hover{opacity:.85}
+.login-card button:disabled{opacity:.5;cursor:not-allowed}
+.error-msg{color:var(--red);font-size:.8rem;text-align:center;margin-bottom:.8rem;min-height:1.2rem}
+.hidden{display:none!important}
+
+/* === DASHBOARD === */
+#dashboard-page{width:100%;max-width:720px;padding:1rem}
+.header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.8rem 0;margin-bottom:1rem;flex-wrap:wrap}
+.header h1{font-size:1.2rem;white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;padding:.3rem .7rem;border-radius:20px;font-weight:600}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-yellow{background:rgba(234,179,8,.15);color:var(--yellow)}
+.btn-sm{padding:.4rem .9rem;border:none;border-radius:var(--radius);font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .2s;color:#fff}
+.btn-sm:hover{opacity:.8}
+.btn-logout{background:var(--card-alt);color:var(--muted)}
+.btn-connect{background:var(--green)}
+.btn-disconnect{background:var(--red)}
+.btn-connect:disabled,.btn-disconnect:disabled{opacity:.5;cursor:not-allowed}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card h2{font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.8rem}
+.status-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.status-info{display:flex;align-items:center;gap:.5rem}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot-red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.dot-yellow{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+.status-text{font-weight:600;font-size:.95rem}
+.phone-text{color:var(--muted);font-size:.85rem}
+
+/* QR */
+.qr-wrap{text-align:center;padding:1rem 0}
+.qr-wrap img{width:200px;height:200px;border-radius:var(--radius);background:#fff;padding:8px}
+.qr-hint{color:var(--muted);font-size:.8rem;margin-top:.6rem}
+.qr-actions{display:flex;gap:.5rem;justify-content:center;margin-top:.8rem;flex-wrap:wrap}
+.btn-refresh{background:var(--accent);color:#fff;padding:.45rem 1rem;border:none;border-radius:var(--radius);font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn-refresh:hover{opacity:.8}
+.btn-refresh:disabled{opacity:.5;cursor:not-allowed}
+.btn-refresh svg{width:14px;height:14px;vertical-align:middle;margin-right:4px}
+
+/* Log */
+.log-list{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem}
+.log-item{display:flex;gap:.6rem;font-size:.82rem;padding:.4rem 0;border-bottom:1px solid var(--card-alt)}
+.log-time{color:var(--muted);white-space:nowrap;min-width:50px}
+.log-msg{word-break:break-word}
+
+/* Docs */
+.docs-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.docs-toggle::after{content:'▸';transition:transform .2s;font-size:.8rem}
+.docs-toggle.open::after{transform:rotate(90deg)}
+.docs-body{display:none;margin-top:.8rem}
+.docs-body.show{display:block}
+.docs-body h3{font-size:.85rem;color:var(--accent);margin:1rem 0 .4rem}
+.docs-body h3:first-child{margin-top:0}
+.docs-body p,.docs-body li{font-size:.82rem;color:var(--muted);line-height:1.6}
+.docs-body ul{padding-left:1.2rem;margin-bottom:.6rem}
+.docs-body li{margin-bottom:.3rem}
+.docs-table{width:100%;border-collapse:collapse;font-size:.8rem;margin:.6rem 0}
+.docs-table th,.docs-table td{padding:.45rem .6rem;text-align:left;border-bottom:1px solid var(--card-alt)}
+.docs-table th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase}
+.docs-table td:first-child{white-space:nowrap}
+.method{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.7rem;font-weight:700;margin-right:.3rem}
+.method-get{background:rgba(34,197,94,.15);color:var(--green)}
+.method-post{background:rgba(59,130,246,.15);color:var(--accent)}
+pre{background:#0b1120;border-radius:var(--radius);padding:.8rem;overflow-x:auto;font-size:.78rem;line-height:1.5;margin:.5rem 0}
+pre code{color:#e2e8f0;font-family:'SF Mono','Fira Code',monospace}
+.code-label{font-size:.72rem;color:var(--muted);margin-bottom:.2rem;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.copy-btn{float:right;background:var(--card-alt);border:none;color:var(--muted);padding:.2rem .5rem;border-radius:4px;font-size:.7rem;cursor:pointer}
+.copy-btn:hover{color:var(--text)}
+.env-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0}
+.env-key{background:var(--card-alt);padding:.2rem .5rem;border-radius:4px;font-size:.78rem;font-family:monospace;color:var(--yellow)}
+.env-val{font-size:.78rem;color:var(--muted)}
+
+/* Responsive */
+@media(max-width:480px){
+  html{font-size:14px}
+  .login-card{padding:2rem 1.5rem}
+  .header{flex-direction:column;align-items:flex-start}
+  .header-right{width:100%;justify-content:space-between}
+  .qr-wrap img{width:170px;height:170px}
+  .docs-table{font-size:.72rem}
+  .docs-table th,.docs-table td{padding:.35rem .4rem}
+  pre{font-size:.72rem;padding:.6rem}
+}
+@media(min-width:768px){
+  .log-list{max-height:300px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-card">
+    <h1>WA Gateway Send Msg</h1>
+    <p>Kirim pesan WhatsApp otomatis via API</p>
+    <div class="error-msg" id="login-error"></div>
+    <form id="login-form">
+      <input type="text" id="inp-user" placeholder="Username" autocomplete="username" required>
+      <input type="password" id="inp-pass" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit" id="btn-login">Login</button>
+    </form>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashboard-page" class="hidden">
+  <div class="header">
+    <h1>WA Gateway Send Msg</h1>
+    <div class="header-right">
+      <span class="badge badge-red" id="badge-status">Disconnected</span>
+      <button class="btn-sm btn-logout" id="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Status Koneksi</h2>
+    <div class="status-row">
+      <div class="status-info">
+        <div class="dot dot-red" id="dot-status"></div>
+        <span class="status-text" id="txt-status">Disconnected</span>
+        <span class="phone-text" id="txt-phone"></span>
+      </div>
+      <button class="btn-sm btn-connect" id="btn-action">Connect & Scan QR</button>
+    </div>
+    <div class="qr-wrap hidden" id="qr-panel">
+      <img id="qr-img" src="" alt="QR Code">
+      <div class="qr-hint">Buka WhatsApp → Perangkat Tertaut → Tautkan Perangkat</div>
+      <div class="qr-actions">
+        <button class="btn-refresh" id="btn-refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh QR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Log Aktivitas</h2>
+    <div class="log-list" id="log-list">
+      <div class="log-item"><span class="log-time">--:--</span><span class="log-msg">Menunggu koneksi...</span></div>
+    </div>
+  </div>
+
+  <!-- API DOCS -->
+  <div class="card">
+    <h2 class="docs-toggle" id="docs-toggle">API Documentation</h2>
+    <div class="docs-body" id="docs-body">
+
+      <h3>Endpoint Summary</h3>
+      <table class="docs-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Keterangan</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/login</td><td>-</td><td>Login, dapat JWT token</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/gateway/status</td><td>JWT</td><td>Cek status koneksi WA</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/gateway/connect</td><td>JWT</td><td>Mulai connect & tampilkan QR</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/gateway/disconnect</td><td>JWT</td><td>Logout & hapus session</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/gateway/refresh-qr</td><td>JWT</td><td>Generate QR baru (reconnect)</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/send</td><td>API Key</td><td>Kirim pesan WA (dipanggil PHP)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Authentication</h3>
+      <p>Ada 2 jenis auth yang dipakai:</p>
+      <ul>
+        <li><strong>JWT Token</strong> — untuk endpoint dashboard (<code>/api/gateway/*</code>). Kirim di header: <code>Authorization: Bearer &lt;token&gt;</code></li>
+        <li><strong>API Key</strong> — untuk endpoint kirim pesan (<code>/api/send</code>). Kirim di header: <code>x-api-key: &lt;key&gt;</code></li>
+      </ul>
+
+      <h3>POST /api/send — Kirim Pesan</h3>
+      <p>Endpoint utama untuk mengirim pesan WhatsApp. Support 2 mode:</p>
+
+      <span class="code-label">Mode 1: Kirim ke 1 nomor</span>
+      <pre><code>{
+  "to": "6281234567890",
+  "message": "Teks pesan..."
+}</code></pre>
+
+      <span class="code-label">Mode 2: Broadcast ke banyak nomor</span>
+      <pre><code>{
+  "recipients": ["6281234567890", "6289876543210", "08211111111"],
+  "message": "Teks pesan..."
+}</code></pre>
+
+      <span class="code-label">Response sukses</span>
+      <pre><code>{
+  "success": true,
+  "sent": 2,
+  "failed": 0,
+  "results": [
+    { "success": true, "phone": "6281234567890@s.whatsapp.net" },
+    { "success": true, "phone": "6289876543210@s.whatsapp.net" }
+  ]
+}</code></pre>
+
+      <h3>Contoh: cURL</h3>
+      <pre><code># Kirim ke 1 nomor
+curl -X POST http://localhost:3001/api/send \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: wag_api_key_rahasia_2024" \
+  -d '{"to":"6281234567890","message":"Halo dari gateway"}'
+
+# Broadcast ke banyak nomor
+curl -X POST http://localhost:3001/api/send \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: wag_api_key_rahasia_2024" \
+  -d '{
+    "recipients": ["6281234567890", "6285678901234"],
+    "message": "Tiket baru masuk"
+  }'</code></pre>
+
+      <h3>Contoh: PHP</h3>
+      <pre><code>&lt;?php
+function notif_to_wa($recipients, $message) {
+    if (empty($recipients) || empty($message)) return false;
+
+    $payload = ['message' => $message];
+    if (is_array($recipients)) {
+        $payload['recipients'] = array_values(array_filter($recipients));
+    } else {
+        $payload['to'] = $recipients;
+    }
+
+    $ch = curl_init('http://localhost:3001/api/send');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'x-api-key: wag_api_key_rahasia_2024',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if (!$response || $httpCode !== 200) return false;
+    $data = json_decode($response, true);
+    return !empty($data['success']);
+}
+
+// Contoh pemakaian:
+$staffPhones = ['6281234567890', '6285678901234'];
+$pesan = "Tiket Baru Masuk\nKode: TKT-001\nDari: Budi";
+notif_to_wa($staffPhones, $pesan);
+?&gt;</code></pre>
+
+      <h3>Environment Variables</h3>
+      <p>Konfigurasi ada di file <code>.env</code>:</p>
+      <div class="env-row"><span class="env-key">PORT</span><span class="env-val">Port server (default: 3001)</span></div>
+      <div class="env-row"><span class="env-key">JWT_SECRET</span><span class="env-val">Secret key untuk JWT (min 32 karakter)</span></div>
+      <div class="env-row"><span class="env-key">JWT_EXPIRES_IN</span><span class="env-val">Masa berlaku token (contoh: 24h)</span></div>
+      <div class="env-row"><span class="env-key">DASHBOARD_USERNAME</span><span class="env-val">Username login dashboard</span></div>
+      <div class="env-row"><span class="env-key">DASHBOARD_PASSWORD</span><span class="env-val">Password login dashboard</span></div>
+      <div class="env-row"><span class="env-key">WA_API_KEY</span><span class="env-val">API Key untuk endpoint /api/send</span></div>
+
+      <h3>Tips</h3>
+      <ul>
+        <li>Nomor bisa format <code>08xx</code>, <code>628xx</code>, atau <code>8xx</code> — auto normalisasi ke format internasional</li>
+        <li>Pesan mendukung format WhatsApp: <code>*bold*</code>, <code>_italic_</code>, <code>~strikethrough~</code></li>
+        <li>Timeout request disarankan 5 detik agar aplikasi tetap responsif walau gateway mati</li>
+        <li>Auto-reconnect: jika koneksi WA terputus (bukan logout), gateway akan reconnect otomatis</li>
+        <li>Session tersimpan di folder <code>auth_info/</code> — jangan di-commit ke git</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  const API = '';
+  const $ = s => document.querySelector(s);
+
+  // State
+  let token = localStorage.getItem('wag_token');
+  let currentStatus = 'disconnected';
+
+  // Elements
+  const loginPage = $('#login-page');
+  const dashPage = $('#dashboard-page');
+  const loginForm = $('#login-form');
+  const loginError = $('#login-error');
+  const btnLogin = $('#btn-login');
+  const btnLogout = $('#btn-logout');
+  const btnAction = $('#btn-action');
+  const badge = $('#badge-status');
+  const dot = $('#dot-status');
+  const txtStatus = $('#txt-status');
+  const txtPhone = $('#txt-phone');
+  const qrPanel = $('#qr-panel');
+  const qrImg = $('#qr-img');
+  const btnRefresh = $('#btn-refresh');
+  const logList = $('#log-list');
+
+  // Helpers
+  function addLog(msg) {
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="log-time">${time}</span><span class="log-msg">${msg}</span>`;
+    logList.prepend(item);
+    while (logList.children.length > 20) logList.lastChild.remove();
+  }
+
+  function setStatus(s, phone) {
+    currentStatus = s;
+    const map = {
+      disconnected:  { text:'Disconnected',  cls:'red',    btn:'Connect & Scan QR', btnCls:'btn-connect' },
+      connecting:    { text:'Connecting...',   cls:'yellow', btn:'Connecting...',     btnCls:'btn-connect' },
+      qr_ready:     { text:'Scan QR Code',    cls:'yellow', btn:'Connecting...',     btnCls:'btn-connect' },
+      connected:    { text:'Connected',        cls:'green',  btn:'Disconnect',        btnCls:'btn-disconnect' },
+    };
+    const info = map[s] || map.disconnected;
+
+    badge.textContent = info.text;
+    badge.className = 'badge badge-' + info.cls;
+    dot.className = 'dot dot-' + info.cls;
+    txtStatus.textContent = info.text;
+    txtPhone.textContent = phone ? '· ' + phone : '';
+
+    btnAction.textContent = info.btn;
+    btnAction.className = 'btn-sm ' + info.btnCls;
+    btnAction.disabled = (s === 'connecting' || s === 'qr_ready');
+
+    if (s !== 'qr_ready') qrPanel.classList.add('hidden');
+  }
+
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    return r.json();
+  }
+
+  // Auth
+  if (token) {
+    loginPage.classList.add('hidden');
+    dashPage.classList.remove('hidden');
+    initDashboard();
+  }
+
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    loginError.textContent = '';
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Logging in...';
+    try {
+      const data = await api('POST', '/api/auth/login', {
+        username: $('#inp-user').value,
+        password: $('#inp-pass').value,
+      });
+      if (data.success) {
+        token = data.token;
+        localStorage.setItem('wag_token', token);
+        loginPage.classList.add('hidden');
+        dashPage.classList.remove('hidden');
+        initDashboard();
+      } else {
+        loginError.textContent = data.error || 'Login gagal';
+      }
+    } catch {
+      loginError.textContent = 'Gagal terhubung ke server';
+    }
+    btnLogin.disabled = false;
+    btnLogin.textContent = 'Login';
+  });
+
+  btnLogout.addEventListener('click', () => {
+    token = null;
+    localStorage.removeItem('wag_token');
+    dashPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+  });
+
+  btnAction.addEventListener('click', async () => {
+    if (currentStatus === 'connected') {
+      if (!confirm('Yakin mau disconnect?')) return;
+      btnAction.disabled = true;
+      await api('POST', '/api/gateway/disconnect');
+    } else {
+      btnAction.disabled = true;
+      await api('POST', '/api/gateway/connect');
+    }
+  });
+
+  btnRefresh.addEventListener('click', async () => {
+    btnRefresh.disabled = true;
+    btnRefresh.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Refreshing...';
+    addLog('Meminta QR baru...');
+    await api('POST', '/api/gateway/refresh-qr');
+  });
+
+  // Dashboard init
+  async function initDashboard() {
+    // Fetch current status
+    try {
+      const data = await api('GET', '/api/gateway/status');
+      if (data.success) {
+        setStatus(data.status, data.phone);
+        if (data.status === 'connected') addLog('Terhubung sebagai ' + data.phone);
+        if (data.status === 'qr_ready' && data.qr) {
+          qrImg.src = data.qr;
+          qrPanel.classList.remove('hidden');
+          addLog('QR code tersedia, silakan scan');
+        }
+      }
+    } catch {}
+
+    // Socket.IO
+    const socket = io();
+    socket.on('status', ({ status, qr, phone }) => {
+      setStatus(status, phone);
+
+      if (status === 'connecting') addLog('Menghubungkan...');
+      if (status === 'qr_ready' && qr) {
+        qrImg.src = qr;
+        qrPanel.classList.remove('hidden');
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Refresh QR';
+        addLog('QR code baru siap, silakan scan');
+      }
+      if (status === 'connected') {
+        qrPanel.classList.add('hidden');
+        addLog('Terhubung sebagai ' + phone);
+      }
+      if (status === 'disconnected') {
+        qrPanel.classList.add('hidden');
+        addLog('Terputus');
+      }
+    });
+  }
+
+  // Docs toggle
+  const docsToggle = $('#docs-toggle');
+  const docsBody = $('#docs-body');
+  docsToggle.addEventListener('click', () => {
+    docsToggle.classList.toggle('open');
+    docsBody.classList.toggle('show');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "wa-gateway",
+  "version": "1.0.0",
+  "description": "WhatsApp Gateway — Kirim Pesan Otomatis via API",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@itsliaaa/baileys": "github:itsliaaa/baileys",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.0",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.0"
+  }
+}
